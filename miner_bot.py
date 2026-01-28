@@ -1,7 +1,7 @@
 import os
 import datetime
 
-target_ip = "8.8.8.8"
+target_ip = "1.1.1.1"
 
 response = os.system(f"ping -c 1 {target_ip} > /dev/null 2<&1")
 
