@@ -1,13 +1,19 @@
 import os
 import datetime
 
-target_ip = "1.1.1.1"
-
-response = os.system(f"ping -c 1 {target_ip} > /dev/null 2<&1")
+target_ips = ["8.8.8.8","1.1.1.1","192.168.0.0"]
 
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-if response == 0:
-	print(f"[{now}] IP: {target_ip} is ONLINE !!!")
-else:
-	print(f"[{now}] IP: {target_ip} is DEAD (check Now!)")
+print(f"------- Start Checking at {now} -----")
+
+for ip in target_ips:
+	response = os.system(f"ping -c 1 {ip} > /dev/null 2>&1")
+
+	if response == 0:
+		print(f"[{ip}] :  is ONLINE !!!")
+	else:
+		print(f"[{ip}] : is DEAD (check Now!)")
+
+print("-------------------------------------------")
+
