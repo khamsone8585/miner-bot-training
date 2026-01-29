@@ -1,8 +1,16 @@
 import os
 import datetime
 
-target_ips = ["8.8.8.8","1.1.1.1","192.168.0.0"]
+def check_ip_status(ip_address):
+	response = os.system(f"ping -c 1 {ip_address} > //dev/null 2>&1")
+	
+	if response == 0:
+		return True
+	else:
+		return False
 
+
+target_ips = ["8.8.8.8","1.1.1.1","192.168.0.0"]
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 print(f"------- Start Checking at {now} -----")
