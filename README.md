@@ -30,6 +30,8 @@ Tech Stack: **Python 3, Linux Cronjob, Shell Script, Git**
    # ตั้งค่า Telegram Bot
 TELEGRAM_TOKEN = "ใส่_Token_ของคุณ"
 CHAT_ID = "ใส่_Chat_ID_ของคุณ"
+4. crontab -e
+5. */5 * * * * /usr/bin/python3 /root/dev_train/miner_bot.py >> /root/dev_train/bot.log 2>&1
 
 # รายชื่อ IP ที่ต้องการตรวจสอบ
 target_ips = ["192.168.1.10", "192.168.1.20", "8.8.8.8"]	
