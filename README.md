@@ -1,40 +1,30 @@
-# 🤖 Miner Monitor Bot (V.1.5)
-**ระบบเฝ้าระวังเหมืองขุด Crypto และตรวจสอบสถานะ Network ภายในโรงงานแบบอัตโนมัติ**
+# 🤖 Miner Monitor Bot (V.1.7) - Docker Edition
+**ระบบเฝ้าระวังเหมืองขุด Crypto และตรวจสอบสถานะ Network (SD-WAN) ภายในโรงงานแบบอัตโนมัติ**
 
 พัฒนาโดย: **Khamsone**
-Tech Stack: **Python 3, Linux Cronjob, Shell Script, Git**
+Tech Stack: **Python 3, Docker, Shell Script, Git**
 
 ---
 
 ## 🚀 ฟีเจอร์หลัก (Key Features)
 
-* **Multi-Target Monitoring:** รองรับการเช็ค IP Address จำนวนมากพร้อมกัน (Mining Rigs, Firewall, Switches)
-* **Real-time Telegram Alert:** แจ้งเตือนเข้ามือถือทันทีเมื่ออุปกรณ์มีปัญหา (Offline) หรือกลับมาทำงานปกติ (Recovered)
-* **🧠 Smart State Monitoring (V1.5):** มีระบบจำสถานะก่อนหน้า (State Persistence) เพื่อ **ลดการแจ้งเตือนขยะ (Spam Alert)**
-    * แจ้งเตือนเมื่อสถานะ *เปลี่ยน* เท่านั้น (เช่น จาก Online -> Offline)
-    * หากดับต่อเนื่อง จะไม่แจ้งเตือนซ้ำให้รำคาญ
-* **24/7 Automation:** ทำงานอัตโนมัติทุกๆ 5 นาทีผ่านระบบ Cronjob
-* **Logging System:** บันทึกประวัติการทำงานลงไฟล์ Log เพื่อตรวจสอบย้อนหลัง
+* **Multi-Target Monitoring:** รองรับการเช็ค IP Address จำนวนมากพร้อมกัน
+* **🛡️ SD-WAN Monitoring (V1.7):** ตรวจสอบเส้นทางอินเทอร์เน็ตแบบละเอียด (Main vs Backup)
+    * แยกแยะสถานะ **Normal**, **Failover** (วิ่งเส้นสำรอง), และ **Critical** (ดับสนิท)
+* **Real-time Alert:** แจ้งเตือนผ่าน Telegram ทันทีเมื่อสถานะมีการเปลี่ยนแปลง
+* **🧠 Smart State:** มีระบบจำสถานะ (State Persistence) ลดการแจ้งเตือนซ้ำ (No Spam)
+* **🐳 Dockerized:** รันบน Docker Container 100% ทำงานแยกอิสระ ปลอดภัย และย้ายเครื่องง่าย
 
 ---
 
-## 🛠️ วิธีการติดตั้ง (Installation)
+## 🐳 วิธีการติดตั้งด้วย Docker (แนะนำ)
 
-1. **Clone โปรเจกต์ลงเครื่อง Server**
+วิธีนี้ง่ายและเสถียรที่สุด ไม่ต้องตั้งค่า Cronjob เอง
+
+1. **Clone โปรเจกต์**
    ```bash
    git clone [https://github.com/khamsone8585/miner-bot-training.git](https://github.com/khamsone8585/miner-bot-training.git)
    cd miner-bot-training
-2. Install Library 
-   apt install python3-requests
-3. ตั้งค่า Config แก้ไขไฟล์ miner_bot.py เพื่อใส่ Token และ IP ที่ต้องการเช็ค
-   # ตั้งค่า Telegram Bot
-TELEGRAM_TOKEN = "ใส่_Token_ของคุณ"
-CHAT_ID = "ใส่_Chat_ID_ของคุณ"
-4. crontab -e
-5. */5 * * * * /usr/bin/python3 /root/dev_train/miner_bot.py >> /root/dev_train/bot.log 2>&1
-
-# รายชื่อ IP ที่ต้องการตรวจสอบ
-target_ips = ["192.168.1.10", "192.168.1.20", "8.8.8.8"]	
 ------------------------------------------------------------
 📅 Update Log
 Day 1: เริ่มต้นโปรเจกต์ (Basic Ping Script)
@@ -47,3 +37,8 @@ Day 4: เชื่อมต่อ API แจ้งเตือนผ่าน T
 
 Day 5 (Latest): อัปเกรด Logic เป็น V1.5 (Smart State Monitoring) และตั้งค่า Cronjob
 
+Day 6 (Latest):
+
+🐳 Docker Containerization: เปลี่ยนระบบรันเป็น Service บน Docker
+
+🛡️ SD-WAN Logic (V1.7): เพิ่มการตรวจสอบ Network แบบ 4 เส้นทาง (LTC/ETL) แยก Main/Backup
