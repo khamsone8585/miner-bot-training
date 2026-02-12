@@ -10,9 +10,10 @@ def load_config():
     ฟังก์ชันนี้จะคืนค่าการตั้งค่าทั้งหมดที่จำเป็นสำหรับการทำงานของบอท
     """
     config = {
-        "TELEGRAM_TOKEN": "8216223522:AAEvbQ_TU0I_iAIchfIQljGdK_K8FyNFezg",
-        "CHAT_ID": "6417593756",
+        "TELEGRAM_TOKEN": os.getenv("TELEGRAM_TOKEN", "8216223522:AAEvbQ_TU0I_iAIchfIQljGdK_K8FyNFezg"),
+        "CHAT_ID": os.getenv("CHAT_ID", "6417593756"),
         "STATE_FILE": "/app/monitor_state.json",
+        "KUMA_PUSH_URL": os.getenv("KUMA_PUSH_URL"),  # Uptime Kuma Push Monitor URL
         "WAN_LINKS": {
             "LTC_H3 (Main)": "202.137.147.163",
             "LTC_H4 (Main)": "202.137.147.164",
@@ -31,12 +32,38 @@ def check_ping(ip):
     Returns:
         bool: True หากสามารถ ping ได้, False หากไม่สามารถ ping ได้
     """
+    import subprocess
+    import re
+    
     try:
-        # Ping 1 ครั้ง รอ 1 วินาที
-        response = os.system(f"ping -c 1 -W 1 {ip} > /dev/null 2>&1")
-        return response == 0
+        # Ping 4 ครั้ง รอ 1 วินาทีต่อครั้ง
+        result = subprocess.run(
+            ["ping", "-c", "4", "-W", "1", ip],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        # Parse packet loss from ping output
+        packet_loss = 100  # Default to 100% loss if parsing fails
+        if result.stdout:
+            # Look for packet loss percentage in ping output
+            loss_match = re.search(r'(\d+)% packet loss', result.stdout)
+            if loss_match:
+                packet_loss = int(loss_match.group(1))
+        
+        # Log ping results for debugging
+        if packet_loss > 0:
+            print(f"Ping to {ip} failed (Packet Loss: {packet_loss}%)")
+        
+        # Only consider link DOWN if packet loss is 100% (all 4 pings fail)
+        return packet_loss < 100
+        
+    except subprocess.TimeoutExpired:
+        print(f"Ping to {ip} failed (Packet Loss: 100%) - Timeout")
+        return False
     except Exception as e:
-        print(f"Ping Error for {ip}: {e}")
+        print(f"Ping to {ip} failed (Packet Loss: 100%) - Error: {e}")
         return False
 
 def analyze_network(results):
@@ -87,6 +114,28 @@ def send_telegram(message, config):
         print("❌ Telegram connection error")
     except Exception as e:
         print(f"❌ Telegram send error: {e}")
+
+def send_kuma_heartbeat(kuma_url):
+    """
+    ส่ง heartbeat ไปยัง Uptime Kuma Push Monitor เพื่อแจ้งว่าบอทยังทำงานอยู่
+    Args:
+        kuma_url (str): URL ของ Kuma Push Monitor
+    """
+    if not kuma_url:
+        return  # ถ้าไม่มี URL ให้ข้าม
+    
+    try:
+        response = requests.get(kuma_url, timeout=10)
+        if response.status_code == 200:
+            print("❤️ Sent Heartbeat to Kuma")
+        else:
+            print(f"⚠️ Kuma returned status code: {response.status_code}")
+    except requests.exceptions.Timeout:
+        print("❌ Kuma heartbeat timeout")
+    except requests.exceptions.ConnectionError:
+        print("❌ Kuma connection error")
+    except Exception as e:
+        print(f"❌ Kuma heartbeat error: {e}")
 
 def load_state(state_file):
     """
@@ -184,6 +233,18 @@ def main():
     while True:
         try:
             run_monitoring_cycle(config)
+            
+            # ส่ง heartbeat ไปยัง Uptime Kuma หลังจากการตรวจสอบเสร็จสิ้น
+            if config["KUMA_PUSH_URL"]:
+                try:
+                    response = requests.get(config["KUMA_PUSH_URL"], timeout=10)
+                    if response.status_code == 200:
+                        print("❤️ Sent Heartbeat to Kuma")
+                    else:
+                        print(f"⚠️ Kuma returned status code: {response.status_code}")
+                except Exception as e:
+                    print(f"❌ Kuma heartbeat failed: {e}")
+            
             time.sleep(config["CHECK_INTERVAL"])
         except KeyboardInterrupt:
             print("\n🛑 Bot stopped by user")
