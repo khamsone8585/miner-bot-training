@@ -1,0 +1,26 @@
+# Miner Bot — Project Rules (STRICT)
+
+## Run Environment
+- **Docker Compose ONLY.** All code runs via `docker compose up`. Never run raw Python scripts (e.g., `python miner_bot.py`) directly on the host machine. This prevents ghost processes that leak pings and Telegram calls after a crash.
+- Use `docker compose up --build -d` for fresh deploys; `docker compose logs -f miner-bot` to tail logs.
+
+## Networking
+- **Always use internal Docker hostnames** for inter-service API calls.
+  - Uptime Kuma: `http://uptime-kuma:3001`
+  - Never use `localhost`, `127.0.0.1`, or `172.17.0.1` — those break inside Docker's bridge network.
+- The services share the `monitoring_net` bridge network defined in `docker-compose.yml`.
+
+## Heartbeat Timing
+- The bot's main check interval: **300 seconds** (5 minutes).
+- Uptime Kuma Push Monitor expects a heartbeat every **360 seconds** (6 minutes).
+- This gives a 60-second grace window. If the bot is late by more than 60s, Kuma will mark it as DOWN.
+
+## Secrets
+- **Never commit `.env`** — it contains real Telegram tokens and chat IDs. Use `.env.example` as the template.
+- Hardcoded fallback credentials in `load_config()` are legacy and must be removed.
+
+## File Layout
+- `miner_bot.py` — main bot (runs inside `/app` in the container).
+- `docker-compose.yml` — orchestrates `miner-bot` + `uptime-kuma`.
+- `Dockerfile` — builds the bot image (python:3.9-slim + iputils-ping).
+- State is persisted to `/app/data` via the `bot-data` Docker volume.

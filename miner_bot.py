@@ -1,4 +1,5 @@
 import os
+import sys
 import datetime
 import requests
 import json
@@ -8,12 +9,13 @@ def load_config():
     """
     โหลดการตั้งค่าต่างๆ จากตัวแปรสภาพแวดล้อม
     ฟังก์ชันนี้จะคืนค่าการตั้งค่าทั้งหมดที่จำเป็นสำหรับการทำงานของบอท
+    ไม่มีค่า fallback สำหรับ credentials — ต้องตั้งค่าใน .env เท่านั้น
     """
     config = {
-        "TELEGRAM_TOKEN": os.getenv("TELEGRAM_TOKEN", "8216223522:AAEvbQ_TU0I_iAIchfIQljGdK_K8FyNFezg"),
-        "CHAT_ID": os.getenv("CHAT_ID", "6417593756"),
+        "TELEGRAM_TOKEN": os.getenv("TELEGRAM_TOKEN"),   # Required — no fallback
+        "CHAT_ID": os.getenv("CHAT_ID"),                  # Required — no fallback
         "STATE_FILE": "/app/monitor_state.json",
-        "KUMA_PUSH_URL": os.getenv("KUMA_PUSH_URL"),  # Uptime Kuma Push Monitor URL
+        "KUMA_PUSH_URL": os.getenv("KUMA_PUSH_URL"),      # Optional — Uptime Kuma Push URL
         "WAN_LINKS": {
             "LTC_H3 (Main)": "202.137.147.163",
             "LTC_H4 (Main)": "202.137.147.164",
@@ -23,6 +25,24 @@ def load_config():
         "CHECK_INTERVAL": 300  # 5 นาที
     }
     return config
+
+
+def validate_config(config):
+    """
+    ตรวจสอบว่าค่าตั้งค่าที่จำเป็นทั้งหมดมีอยู่ก่อนที่บอทจะเริ่มทำงาน
+    หากขาดค่าใดๆ จะพิมพ์ข้อผิดพลาดชัดเจนและออกจากโปรแกรมทันที
+    """
+    REQUIRED = ["TELEGRAM_TOKEN", "CHAT_ID"]
+    missing = [key for key in REQUIRED if not config.get(key)]
+
+    if missing:
+        print("❌ STARTUP ERROR: Missing required environment variables:")
+        for key in missing:
+            print(f"   - {key} (must be set in .env)")
+        print("💡 Copy .env.example to .env and fill in the values, then restart via Docker Compose.")
+        sys.exit(1)
+
+    print("✅ Config validated — all required environment variables are present.")
 
 def check_ping(ip):
     """
@@ -222,8 +242,9 @@ def main():
     print("🤖 Miner Bot Started...")
     print("📡 Monitoring SD-WAN Links...")
     
-    # โหลดการตั้งค่า
+    # โหลดและตรวจสอบการตั้งค่า — จะออกทันทีหาก .env ไม่ครบ
     config = load_config()
+    validate_config(config)
     print(f"⏰ Check interval: {config['CHECK_INTERVAL']} seconds")
     print(f"📁 State file: {config['STATE_FILE']}")
     print(f"🔗 Monitoring {len(config['WAN_LINKS'])} links")

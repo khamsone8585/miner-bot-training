@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  # ── Miner Bot ──────────────────────────────────────
+  miner-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: miner-bot
+    restart: "no"
+    env_file:
+      - .env
+    volumes:
+      - bot-data:/app/data        # Persistent: state file, CSV downtime logs
+      - bot-logs:/app/logs        # Persistent: application logs
+    networks:
+      - monitoring_net
+    depends_on:
+      - uptime-kuma
+
+  # ── Uptime Kuma ────────────────────────────────────
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"               # Web dashboard accessible from host
+    volumes:
+      - kuma-data:/app/data       # Persistent: Kuma SQLite database
+    networks:
+      - monitoring_net
+
+# ── Shared Network ─────────────────────────────────
+networks:
+  monitoring_net:
+    driver: bridge
+
+# ── Named Volumes ──────────────────────────────────
+volumes:
+  bot-data:
+    driver: local
+  bot-logs:
+    driver: local
+  kuma-data:
+    driver: local
